@@ -8,19 +8,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 export default function WordGenerator() {
   const [inputWord, setInputWord] = useState("")
-  const [count, setCount] = useState<number>(5)
+  const [count, setCount] = useState<number>(0)
+  const [orMore, setOrMore] = useState<boolean>(false)
   const [generatedWords, setGeneratedWords] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [firstLoad, setFirstLoad] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const generateWords = async () => {
     if (!inputWord.trim()) return
 
+    if (firstLoad) setFirstLoad(false)
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await fetch(`/search/${encodeURIComponent(inputWord.trim())}/${count}`)
+      const response = await fetch(`/search/${encodeURIComponent(inputWord.trim())}/${count}?or_more=${orMore}`)
 
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`)
@@ -52,7 +55,7 @@ export default function WordGenerator() {
         </div>
 
         <Card className="w-full max-w-md p-8 space-y-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-2xl">
-          <div className="flex justify-center -mt-16 mb-6">
+          <div className="flex justify-center -mt-36 mb-6">
             <img src="/rete.png" alt="rete" className="w-50" />
           </div>
 
@@ -72,6 +75,11 @@ export default function WordGenerator() {
                 placeholder="Enter a word..."
                 value={inputWord}
                 onChange={(e) => setInputWord(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    generateWords()
+                  }
+                }}
                 className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
               />
             </div>
@@ -80,15 +88,34 @@ export default function WordGenerator() {
               <label htmlFor="count" className="text-sm font-medium text-foreground">
                 Number of letters
               </label>
-              <Input
-                id="count"
-                type="number"
-                min="1"
-                max="20"
-                value={count}
-                onChange={(e) => setCount(Number.parseInt(e.target.value) || 1)}
-                className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
-              />
+              <div className="flex items-center space-x-3">
+                <Input
+                  id="count"
+                  type="number"
+                  min="0"
+                  max="20"
+                  value={count}
+                  onChange={(e) => setCount(Number.parseInt(e.target.value) || 0)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      generateWords()
+                    }
+                  }}
+                  className="flex-1 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
+                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="orMore"
+                    checked={orMore}
+                    onChange={(e) => setOrMore(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-white/50 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor="orMore" className="text-sm font-medium text-foreground whitespace-nowrap">
+                    or more
+                  </label>
+                </div>
+              </div>
             </div>
 
             <Button
@@ -115,7 +142,7 @@ export default function WordGenerator() {
 
           {generatedWords.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-medium text-foreground">Found Words</h2>
+              <h2 className="text-lg font-medium text-foreground">Found Words ({generatedWords.length})</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {generatedWords.map((word, index) => (
                   <div
@@ -125,12 +152,12 @@ export default function WordGenerator() {
                     {word}
                   </div>
                 ))}
-                {generatedWords.length === 0 && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-md backdrop-blur-sm">
-                    <p className="text-sm text-red-700 dark:text-red-300">No words found.</p>
-                  </div>
-                )}
               </div>
+            </div>
+          )}
+          {generatedWords.length === 0 && !firstLoad && !isLoading && !error && (
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-md backdrop-blur-sm">
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">No words found. Try a different input.</p>
             </div>
           )}
         </Card>
