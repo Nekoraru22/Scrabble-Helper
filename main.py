@@ -1,8 +1,4 @@
-from colorama import Fore, init
 from flask import Flask, send_from_directory, jsonify
-
-init(autoreset=True)
-
 
 class Scrabble:
     def __init__(self, path):
@@ -12,6 +8,12 @@ class Scrabble:
         """
         Separa un texto en una lista de letras, incluyendo 'ch', 'll' y 'rr'
         como unidades únicas. Es una función auxiliar interna de la clase.
+
+        Args:
+            texto: El texto a separar.
+
+        Returns:
+            list: Una lista de letras y combinaciones especiales.
         """
         letras_separadas = []
         i = 0
@@ -28,6 +30,9 @@ class Scrabble:
         """
         Carga un diccionario de palabras desde un archivo de texto y lo
         almacena en un set para una búsqueda y lectura óptimas.
+
+        Args:
+            ruta_archivo: La ruta al archivo de texto que contiene
         """
         diccionario = set()
         try:
@@ -48,10 +53,7 @@ class Scrabble:
     def sort_by_length_with_double_letters(self):
         """
         Ordena una lista de palabras por su longitud, teniendo en cuenta
-        las letras dobles (ch, ll, rr) como una sola unidad.
-
-        Args:
-            palabras (list): Una lista de palabras para ordenar.
+        las letras dobles como una sola unidad.
 
         Returns:
             list: Una nueva lista de palabras ordenada.
@@ -67,7 +69,9 @@ class Scrabble:
         Busca palabras que contengan una subcadena específica.
 
         Args:
-            substring (str): La subcadena a buscar.
+            substring: La subcadena a buscar.
+            length_word: La longitud exacta de las palabras a buscar.
+                         Si es 0, no se filtra por longitud.
 
         Returns:
             list: Una lista de palabras que contienen la subcadena.
