@@ -1,4 +1,6 @@
 from flask import Flask, send_from_directory, jsonify, request
+from multiprocessing import Pool, cpu_count
+from collections import defaultdict
 
 
 class Scrabble:
@@ -103,46 +105,94 @@ class Scrabble:
             else:
                 resultados = [word for word in self.data if substring in word and self.get_letter_length(word) == length_word]
         return resultados
-
+    
     def find_bloque_words(self) -> set:
         """
         Encuentra palabras "bloque" en el conjunto de datos. Una palabra
-        es considerada "bloque" si no está contenida en ninguna otra
+        es considerada "bloque" si NO está contenida en ninguna otra
+        palabra del diccionario.
 
         Returns: Un conjunto de palabras bloque.
         """
-        # Group words by their letter length
-        words_by_length = {}
-        for word in self.data:
-            length = self.get_letter_length(word)
-            if length not in words_by_length:
-                words_by_length[length] = set()
-            words_by_length[length].add(word)
+        return find_bloque_words_optimized(self)
+
+
+def check_word_chunk(args):
+    """
+    Función auxiliar para paralelización. Verifica si las palabras en un chunk
+    están contenidas en otras palabras más largas.
+    """
+    words_to_check, longer_words_set = args
+    contained_words = set()
+    
+    for word in words_to_check:
+        for longer_word in longer_words_set:
+            if word != longer_word and word in longer_word:
+                contained_words.add(word)
+                break  # No need to check further if already found
+    
+    return contained_words
+
+def find_bloque_words_optimized(scrabble_instance) -> set:
+    """
+    Encuentra palabras "bloque" de manera optimizada usando paralelización.
+    Una palabra es "bloque" si NO está contenida en ninguna otra palabra del diccionario.
+    
+    Returns: Un conjunto de palabras bloque (palabras NO contenidas en otras).
+    """
+    print("Iniciando búsqueda de palabras bloque optimizada...")
+    
+    # Group words by their lengths
+    words_by_length = defaultdict(set)
+    for word in scrabble_instance.data:
+        length = scrabble_instance.get_letter_length(word)
+        words_by_length[length].add(word)
+    
+    contained_words = set()
+    total_comparisons = 0
+
+    # Process lengths in ascending order
+    lengths = sorted(words_by_length.keys())
+    
+    for i, current_length in enumerate(lengths):
+        current_words = words_by_length[current_length]
         
-        bloque_words = set()
-        total_checks = 0
+        # Get all longer words
+        longer_words = set()
+        for j in range(i + 1, len(lengths)):
+            longer_words.update(words_by_length[lengths[j]])
         
-        # For each length group, check if words appear in the next length group
-        for length in sorted(words_by_length.keys()):
-            if length + 1 not in words_by_length:
-                continue
-            
-            current_words = words_by_length[length]
-            next_length_words = words_by_length[length + 1]
-            
-            print(f"Checking {len(current_words)} words of length {length} against {len(next_length_words)} words of length {length + 1}")
-            
-            # Check if this word is contained in any word of the next length
-            for word in current_words:
-                for longer_word in next_length_words:
-                    if word in longer_word:
-                        bloque_words.add(word)
-                        break
-                total_checks += len(next_length_words)
+        if not longer_words:
+            continue
+        print(f"Verificando {len(current_words)} palabras de longitud {current_length} contra {len(longer_words)} palabras más largas...")
         
-        print(f"Total comparisons made: {total_checks:,}")
-        print(f"Found {len(bloque_words)} bloque words")
-        return bloque_words
+        # Divide the work into chunks for parallelization
+        num_processes = min(cpu_count(), len(current_words))
+        if num_processes > 1 and len(current_words) > 100:
+            chunk_size = max(1, len(current_words) // num_processes)
+            word_chunks = [list(current_words)[i:i + chunk_size] for i in range(0, len(current_words), chunk_size)]
+            
+            args = [(chunk, longer_words) for chunk in word_chunks]
+            
+            with Pool(num_processes) as pool:
+                results = pool.map(check_word_chunk, args)
+            
+            for result in results:
+                contained_words.update(result)
+        else:
+            # Single process for small datasets
+            result = check_word_chunk((current_words, longer_words))
+            contained_words.update(result)
+        
+        total_comparisons += len(current_words) * len(longer_words)
+    
+    bloque_words = scrabble_instance.data - contained_words
+    
+    print(f"Total de comparaciones estimadas: {total_comparisons:,}")
+    print(f"Palabras contenidas en otras: {len(contained_words)}")
+    print(f"Palabras BLOQUE encontradas: {len(bloque_words)}")
+    
+    return bloque_words
 
 
 def main():
@@ -155,7 +205,7 @@ def main():
     print("Writing sorted data to file...")
     with open("sorted_data.txt", "w", encoding="utf-8") as f:
         for word in sorted_data:
-            bloque_status = '' if word in bloque_words else ' - BLOQUE'
+            bloque_status = ' - BLOQUE' if word in bloque_words else ''
             f.write(f"{word} ({scrabble.get_letter_length(word)}){bloque_status}\n")
     
     print("Process completed!")
@@ -192,5 +242,5 @@ def search(substring, length):
 
 if __name__ == "__main__":
     # UNCOMENT TO RUN THE SCRABBLE PROCESS (IT TAKES A WHILE)
-    main()
+    # main()
     app.run(host='0.0.0.0', port=5000)
