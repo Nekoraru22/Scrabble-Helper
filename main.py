@@ -5,7 +5,7 @@ init(autoreset=True)
 
 class Scrabble:
     def __init__(self, path):
-        self.data = self.load_data(path)
+        self.data = self.load_data(path) or []
 
     def _separar_letras(self, texto):
         """
@@ -86,16 +86,33 @@ def main(save_sorted: bool):
     scrabble = Scrabble("data.txt")
     sorted_data = scrabble.sort_by_length_with_double_letters()
 
-    # Save sorted data
     if save_sorted:
+        # Pre-calculate the "BLOQUE" words
+        bloque_words = set()
+        for word in scrabble.data:
+            if len(scrabble.search_for_containing_string(word, len(scrabble._separar_letras(word)) + 1)) == 0:
+                bloque_words.add(word)
+
+        # Write to file
         with open("sorted_data.txt", "w", encoding="utf-8") as f:
             for word in sorted_data:
-                f.write(f"{word} ({len(scrabble._separar_letras(word))}) {'BLOQUE' if len(scrabble.search_for_containing_string(word, len(word) + 1)) == 0 else ''}\n")
+                bloque_status = 'BLOQUE' if word in bloque_words else ''
+                f.write(f"{word} ({len(scrabble._separar_letras(word))}) {bloque_status}\n")
 
     # Search methods
-    resultados_busqueda = scrabble.search_for_containing_string("pez", 4)
+    resultados_busqueda = scrabble.search_for_containing_string("cogecha", len("cogecha"))
     print(resultados_busqueda)
 
 
+# Endpoint to search for a word
+app = flask.Flask(__name__)
+@app.route('/search/<string:substring>/<int:length>', methods=['GET'])
+def search(substring, length):
+    scrabble = Scrabble("data.txt")
+    if not length:
+        length = 0
+    resultados = scrabble.search_for_containing_string(substring, length)
+    return flask.jsonify(resultados)
+
 if __name__ == "__main__":
-    main(save_sorted=False)
+    main(save_sorted=True)

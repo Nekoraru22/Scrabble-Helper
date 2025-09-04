@@ -9,50 +9,49 @@ export default function WordGenerator() {
   const [inputWord, setInputWord] = useState("")
   const [count, setCount] = useState<number>(5)
   const [generatedWords, setGeneratedWords] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const generateWords = () => {
+  const generateWords = async () => {
     if (!inputWord.trim()) return
 
-    const word = inputWord.trim().toLowerCase()
-    const words: string[] = []
+    setIsLoading(true)
+    setError(null)
 
-    // Generate word variations
-    const prefixes = ["un", "re", "pre", "over", "under", "out", "up"]
-    const suffixes = ["ing", "ed", "er", "est", "ly", "ness", "ful", "less"]
+    try {
+      const response = await fetch(`/search/${encodeURIComponent(inputWord.trim())}/${count}`)
 
-    // Add the original word
-    words.push(word)
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
 
-    // Add prefixed versions
-    for (const prefix of prefixes) {
-      if (words.length >= count) break
-      words.push(prefix + word)
+      const words = await response.json()
+      setGeneratedWords(Array.isArray(words) ? words : [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch words")
+      setGeneratedWords([])
+    } finally {
+      setIsLoading(false)
     }
-
-    // Add suffixed versions
-    for (const suffix of suffixes) {
-      if (words.length >= count) break
-      words.push(word + suffix)
-    }
-
-    // Add some simple rhyming patterns
-    const rhymeEndings = ["at", "ing", "tion", "ly", "er"]
-    for (const ending of rhymeEndings) {
-      if (words.length >= count) break
-      const baseWord = word.slice(0, -2) || word
-      words.push(baseWord + ending)
-    }
-
-    // Ensure we have exactly the requested count
-    setGeneratedWords(words.slice(0, count))
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-gradient-to-br from-blue-200/30 to-purple-200/30 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-gradient-to-tr from-indigo-200/30 to-pink-200/30 dark:from-indigo-900/20 dark:to-pink-900/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-to-br from-yellow-200/20 to-orange-200/20 dark:from-yellow-900/10 dark:to-orange-900/10 rounded-full blur-2xl animate-bounce" style={{animationDuration: '3s'}}></div>
+      </div>
+
+      <Card className="w-full max-w-md p-8 space-y-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-2xl">
+        <div className="flex justify-center -mt-16 mb-6">
+          <img src="/rete.png" alt="rete" className="w-60" />
+        </div>
+
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">Word Generator</h1>
-          <p className="text-sm text-muted-foreground">Enter a word and number to generate variations</p>
+          <h1 className="text-2xl font-semibold text-foreground">Scrabble Helper</h1>
+          <p className="text-sm text-muted-foreground">Enter a word and number of letters to search for words</p>
         </div>
 
         <div className="space-y-4">
@@ -66,13 +65,13 @@ export default function WordGenerator() {
               placeholder="Enter a word..."
               value={inputWord}
               onChange={(e) => setInputWord(e.target.value)}
-              className="w-full"
+              className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="count" className="text-sm font-medium text-foreground">
-              Number of words
+              Number of letters
             </label>
             <Input
               id="count"
@@ -81,28 +80,57 @@ export default function WordGenerator() {
               max="20"
               value={count}
               onChange={(e) => setCount(Number.parseInt(e.target.value) || 1)}
-              className="w-full"
+              className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
             />
           </div>
 
-          <Button onClick={generateWords} className="w-full" disabled={!inputWord.trim()}>
-            Generate Words
+          <Button 
+            onClick={generateWords} 
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
+            disabled={!inputWord.trim() || isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Searching...</span>
+              </div>
+            ) : (
+              "Search Words"
+            )}
           </Button>
         </div>
 
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-md backdrop-blur-sm">
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+
         {generatedWords.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-medium text-foreground">Generated Words</h2>
-            <div className="space-y-2">
+            <h2 className="text-lg font-medium text-foreground">Found Words</h2>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
               {generatedWords.map((word, index) => (
-                <div key={index} className="p-3 bg-muted rounded-md text-sm text-foreground">
+                <div
+                  key={index} 
+                  className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-700/50 dark:to-slate-600/50 rounded-md text-sm text-foreground backdrop-blur-sm border border-white/20 dark:border-slate-600/20 hover:shadow-md transition-shadow duration-200"
+                >
                   {word}
                 </div>
               ))}
+              {generatedWords.length === 0 && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-md backdrop-blur-sm">
+                  <p className="text-sm text-red-700 dark:text-red-300">No words found.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
       </Card>
+
+      <div className="fixed bottom-6 right-6 z-10">
+        <img src="/neko.png" alt="neko" className="w-50 object-contain" />
+      </div>
     </div>
   )
 }
