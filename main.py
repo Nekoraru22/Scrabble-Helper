@@ -115,12 +115,17 @@ app = Flask(__name__, static_folder='static')
 # Serve the Next.js static files from the .next/static directory
 @app.route('/_next/<path:filename>')
 def serve_next_static(filename):
-    return send_from_directory('front/.next/', filename)
+    return send_from_directory('scrabble-helper/.next/', filename)
+
+# Serve other public files (like images, etc.) from the public directory
+@app.route('/<path:filename>')
+def serve_public(filename):
+    return send_from_directory('scrabble-helper/public', filename)
 
 # Serve the main index.html page
 @app.route('/')
 def serve_index():
-    return send_from_directory('front/.next/server/app', 'index.html')
+    return send_from_directory('scrabble-helper/.next/server/app', 'index.html')
 
 # Endpoint to search for a word
 @app.route('/search/<string:substring>/<int:length>', methods=['GET'])
