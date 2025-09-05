@@ -6,11 +6,17 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+interface WordResult {
+  is_bloque: boolean
+  length: number
+  value: string
+}
+
 export default function WordGenerator() {
   const [inputWord, setInputWord] = useState("")
   const [count, setCount] = useState<number>(0)
   const [orMore, setOrMore] = useState<boolean>(false)
-  const [generatedWords, setGeneratedWords] = useState<string[]>([])
+  const [generatedWords, setGeneratedWords] = useState<WordResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [firstLoad, setFirstLoad] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,8 +61,8 @@ export default function WordGenerator() {
         </div>
 
         <Card className="w-full max-w-md p-8 space-y-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-2xl">
-          <div className="flex justify-center -mt-36 mb-6">
-            <img src="/rete.png" alt="rete" className="w-50" />
+          <div className="flex justify-center mb-6">
+            <img src="/rete.png" alt="rete" className="w-52" />
           </div>
 
           <div className="text-center space-y-2">
@@ -144,12 +150,21 @@ export default function WordGenerator() {
             <div className="space-y-3">
               <h2 className="text-lg font-medium text-foreground">Found Words ({generatedWords.length})</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {generatedWords.map((word, index) => (
+                {generatedWords.map((wordObj) => (
                   <div
-                    key={index}
-                    className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-700/50 dark:to-slate-600/50 rounded-md text-sm text-foreground backdrop-blur-sm border border-white/20 dark:border-slate-600/20 hover:shadow-md transition-shadow duration-200"
+                    key={wordObj.value}
+                    className={`p-3 rounded-md text-sm text-foreground backdrop-blur-sm transition-shadow duration-200 ${
+                      wordObj.is_bloque
+                        ? "bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-400 hover:shadow-md"
+                        : "bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-700/50 dark:to-slate-600/50 border border-white/20 dark:border-slate-600/20 hover:shadow-md"
+                    }`}
                   >
-                    {word}
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{wordObj.value}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {wordObj.length} letters
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -171,7 +186,7 @@ export default function WordGenerator() {
                 onClick={() => window.open("https://github.com/Nekoraru22", "_blank")}
                 aria-label="Open creator's website"
               >
-                <img src="/neko.png" alt="neko" className="w-40 object-contain drop-shadow-lg" />
+                <img src="/neko.png" alt="neko" className="w-48 object-contain drop-shadow-lg" />
               </button>
             </TooltipTrigger>
             <TooltipContent
