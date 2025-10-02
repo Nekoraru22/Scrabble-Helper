@@ -22,6 +22,7 @@ pyinstaller --onefile --add-data "frontend;frontend" --add-data "data_api.json:.
 move /Y dist\main.exe scrabble-helper.exe
 rd /S /Q dist
 rd /S /Q build
+rd /S /Q frontend
 del /Q main.spec
 
 @echo Build complete: scrabble-helper.exe
