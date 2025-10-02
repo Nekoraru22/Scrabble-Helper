@@ -185,24 +185,36 @@ def load_data_api(path_api: str) -> list:
         return []
 
 
-def search_for_containing_string(data: list, substring: str, length: int = 0, or_more: bool = False, bonus_letters: str = "") -> list:
+def search_for_containing_string(
+    data: list,
+    starts_with: str,
+    contained: str,
+    ends_with: str,
+    length: int,
+    or_more: bool,
+    bonus_letters: str
+) -> list:
     """
     Busca palabras que contengan una subcadena específica y cumplan con el filtro de longitud, 
     trabajando ahora con una lista de diccionarios.
 
     Args:
         data: La lista de diccionarios de palabras ({'value', 'length', 'is_bloque'}).
-        substring: La subcadena a buscar.
+        starts_with: La subcadena con la que la palabra debe comenzar.
+        contained: La subcadena que la palabra debe contener.
+        ends_with: La subcadena con la que la palabra debe terminar.
         length: La longitud exacta o mínima de las palabras a buscar.
         or_more: Si es True, busca palabras de longitud >= length. Si es False, busca longitud == length.
-        bonus_letters: Letras extra separadas por coma (ahora usadas para el filtrado de palabras).
+        bonus_letters: Letras extra separadas por coma.
 
     Returns: Una lista de diccionarios de resultados ({'is_bloque', 'length', 'value'}).
     """
-    substring = substring.lower()
+    starts_with = starts_with.lower()
+    contained = contained.lower()
+    ends_with = ends_with.lower()
     results = []
 
-    # Preparar el conjunto de letras de bonificación para el filtrado
+    # Prepare the set of bonus letters for filtering
     bonus_chars = set(c.strip().lower() for c in bonus_letters.split(',') if c.strip())
     
     for word_obj in data:
@@ -210,8 +222,8 @@ def search_for_containing_string(data: list, substring: str, length: int = 0, or
         word_lower = word.lower()
         word_length = word_obj['length']
         
-        # Substring Filter
-        if substring not in word_lower:
+        # Combined String Filters
+        if not (word_lower.startswith(starts_with) and word_lower.endswith(ends_with) and contained in word_lower):
             continue
 
         # Bonus Letters Filter
@@ -284,17 +296,26 @@ def serve_index():
     return send_from_directory('scrabble-helper/.next/server/app', 'index.html')
 
 # Endpoint to search for a word
-@app.route('/search/<string:substring>/<int:length>', methods=['GET'])
-def search(substring, length):
-    if not length:
-        length = 0
-
+@app.route('/search', methods=['GET'])
+def search():
     # Get query parameters
+    starts_with = request.args.get('starts_with', '')
+    ends_with = request.args.get('ends_with', '')
+    contained = request.args.get('contained', '')
+    length = int(request.args.get('length', 0))
     or_more = request.args.get('or_more') == 'true'
     bonus_letters = request.args.get('bonus_letters', '')
 
-    resultados = search_for_containing_string(data_api, substring, length, or_more, bonus_letters)
-    print(f"Search for '{substring}' with length {length} (or_more={or_more}, bonus_letters='{bonus_letters}') returned {len(resultados)} results.")
+    resultados = search_for_containing_string(
+        data_api,
+        starts_with,
+        contained,
+        ends_with,
+        length,
+        or_more,
+        bonus_letters
+    )
+    print(f"Search for '{starts_with}...{contained}...{ends_with}' with length {length} (or_more={or_more}) and bonus letters '{bonus_letters}' returned {len(resultados)} results.")
     return jsonify(resultados)
 
 

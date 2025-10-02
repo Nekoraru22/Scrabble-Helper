@@ -27,33 +27,41 @@ export default function WordGenerator() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const generateWords = async () => {
-    if (!inputWord.trim()) return;
+      if (!inputWord.trim()) return;
 
-    if (firstLoad) setFirstLoad(false);
-    setIsLoading(true);
-    setError(null);
-    setCurrentPage(1);
+      if (firstLoad) setFirstLoad(false);
+      setIsLoading(true);
+      setError(null);
+      setCurrentPage(1);
 
-    try {
-      const bonusLettersParam = bonusLetters.trim()
-        ? `&bonus_letters=${encodeURIComponent(bonusLetters.trim())}`
-        : "";
-      const response = await fetch(
-        `http://192.168.1.137:5000/search/${encodeURIComponent(inputWord.trim())}/${count}?or_more=${orMore}${bonusLettersParam}`
-      );
+      // Split the inputWord into three parts using the dot as a separator
+      const parts = inputWord.split('.');
+      const startsWith = parts[0] || '';
+      const contained = parts.slice(1, -1).join('.') || '';
+      const endsWith = parts.length > 1 ? parts[parts.length - 1] : '';
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+      try {
+          const bonusLettersParam = bonusLetters.trim()
+              ? `&bonus_letters=${encodeURIComponent(bonusLetters.trim())}`
+              : "";
+
+          // Construct a new URL using the split parts
+          const url = `http://192.168.1.137:5000/search?starts_with=${encodeURIComponent(startsWith)}&contained=${encodeURIComponent(contained)}&ends_with=${encodeURIComponent(endsWith)}&count=${count}&or_more=${orMore}${bonusLettersParam}`;
+
+          const response = await fetch(url);
+
+          if (!response.ok) {
+              throw new Error(`API request failed: ${response.status}`);
+          }
+
+          const words = await response.json();
+          setGeneratedWords(Array.isArray(words) ? words : []);
+      } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to fetch words");
+          setGeneratedWords([]);
+      } finally {
+          setIsLoading(false);
       }
-
-      const words = await response.json();
-      setGeneratedWords(Array.isArray(words) ? words : []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch words");
-      setGeneratedWords([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
   
   const totalWords = generatedWords.length;
@@ -104,7 +112,7 @@ export default function WordGenerator() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="word" className="text-sm font-medium text-foreground">
-                Word
+                Word <a className="text-gray-500">(starts_with.contained.ends_with)</a>
               </label>
               <Input
                 id="word"
@@ -157,7 +165,7 @@ export default function WordGenerator() {
 
             <div className="space-y-2">
               <label htmlFor="bonusLetters" className="text-sm font-medium text-foreground">
-                Bonus Letters (comma-separated)
+                Bonus Letters <span className="text-gray-500">(comma-separated)</span>
               </label>
               <Input
                 id="bonusLetters"
