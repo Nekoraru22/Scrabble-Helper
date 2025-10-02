@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-
 const RESULTS_PER_PAGE = 500;
 
 interface WordResult {
@@ -16,8 +15,10 @@ interface WordResult {
 }
 
 export default function WordGenerator() {
-  const [inputWord, setInputWord] = useState("")
-  const [count, setCount] = useState<number>(0)
+  const [startsWith, setStartsWith] = useState("")
+  const [contained, setContained] = useState("")
+  const [endsWith, setEndsWith] = useState("")
+  const [length, setLength] = useState<number>(0)
   const [orMore, setOrMore] = useState<boolean>(false)
   const [generatedWords, setGeneratedWords] = useState<WordResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -27,41 +28,43 @@ export default function WordGenerator() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const generateWords = async () => {
-      if (!inputWord.trim()) return;
+    const startsWithParam = startsWith.trim();
+    const containedParam = contained.trim();
+    const endsWithParam = endsWith.trim();
 
-      if (firstLoad) setFirstLoad(false);
-      setIsLoading(true);
-      setError(null);
-      setCurrentPage(1);
+    // Check if at least one of the main search fields is filled
+    if (!startsWithParam && !containedParam && !endsWithParam) {
+      setError("Please enter at least one search criterion (Starts With, Contains, or Ends With).");
+      return;
+    }
 
-      // Split the inputWord into three parts using the dot as a separator
-      const parts = inputWord.split('.');
-      const startsWith = parts[0] || '';
-      const contained = parts.slice(1, -1).join('.') || '';
-      const endsWith = parts.length > 1 ? parts[parts.length - 1] : '';
+    if (firstLoad) setFirstLoad(false);
+    setIsLoading(true);
+    setError(null);
+    setCurrentPage(1);
 
-      try {
-          const bonusLettersParam = bonusLetters.trim()
-              ? `&bonus_letters=${encodeURIComponent(bonusLetters.trim())}`
-              : "";
+    try {
+      const bonusLettersParam = bonusLetters.trim()
+        ? `&bonus_letters=${encodeURIComponent(bonusLetters.trim())}`
+        : "";
 
-          // Construct a new URL using the split parts
-          const url = `http://192.168.1.137:5000/search?starts_with=${encodeURIComponent(startsWith)}&contained=${encodeURIComponent(contained)}&ends_with=${encodeURIComponent(endsWith)}&count=${count}&or_more=${orMore}${bonusLettersParam}`;
+      // Construct a new URL using the new state variables
+      const url = `http://192.168.1.137:5000/search?starts_with=${encodeURIComponent(startsWithParam)}&contained=${encodeURIComponent(containedParam)}&ends_with=${encodeURIComponent(endsWithParam)}&length=${length}&or_more=${orMore}${bonusLettersParam}`;
 
-          const response = await fetch(url);
+      const response = await fetch(url);
 
-          if (!response.ok) {
-              throw new Error(`API request failed: ${response.status}`);
-          }
-
-          const words = await response.json();
-          setGeneratedWords(Array.isArray(words) ? words : []);
-      } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to fetch words");
-          setGeneratedWords([]);
-      } finally {
-          setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
       }
+
+      const words = await response.json();
+      setGeneratedWords(Array.isArray(words) ? words : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch words");
+      setGeneratedWords([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const totalWords = generatedWords.length;
@@ -111,22 +114,35 @@ export default function WordGenerator() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="word" className="text-sm font-medium text-foreground">
-                Word <a className="text-gray-500">(starts_with.contained.ends_with)</a>
+              <label className="text-sm font-medium text-foreground">
+                Word Search
               </label>
-              <Input
-                id="word"
-                type="text"
-                placeholder="Enter a word..."
-                value={inputWord}
-                onChange={(e) => setInputWord(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    generateWords()
-                  }
-                }}
-                className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
-              />
+              <div className="flex space-x-2 items-center">
+                <Input
+                  id="starts-with"
+                  type="text"
+                  placeholder="Prefix..."
+                  value={startsWith}
+                  onChange={(e) => setStartsWith(e.target.value)}
+                  className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
+                />
+                <Input
+                  id="contained"
+                  type="text"
+                  placeholder="Word"
+                  value={contained}
+                  onChange={(e) => setContained(e.target.value)}
+                  className="flex-grow bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
+                />
+                <Input
+                  id="ends-with"
+                  type="text"
+                  placeholder="Suffix..."
+                  value={endsWith}
+                  onChange={(e) => setEndsWith(e.target.value)}
+                  className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -139,8 +155,8 @@ export default function WordGenerator() {
                   type="number"
                   min="0"
                   max="20"
-                  value={count}
-                  onChange={(e) => setCount(Number.parseInt(e.target.value) || 0)}
+                  value={length}
+                  onChange={(e) => setLength(Number.parseInt(e.target.value) || 0)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       generateWords()
@@ -185,7 +201,7 @@ export default function WordGenerator() {
             <Button
               onClick={generateWords}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-              disabled={!inputWord.trim() || isLoading}
+              disabled={isLoading || (!startsWith.trim() && !contained.trim() && !endsWith.trim())}
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
