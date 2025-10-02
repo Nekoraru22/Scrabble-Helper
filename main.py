@@ -206,22 +206,20 @@ def search_for_containing_string(data: list, substring: str, length: int = 0, or
     bonus_chars = set(c.strip().lower() for c in bonus_letters.split(',') if c.strip())
     
     for word_obj in data:
-        # Extraer los datos del diccionario
         word = word_obj['value']
         word_lower = word.lower()
         word_length = word_obj['length']
         
-        # 1. Filtro de Subcadena
+        # Substring Filter
         if substring not in word_lower:
             continue
-        
-        # 2. Filtro de Letras de Bonificación (NUEVO: la palabra debe contener TODAS las letras de bonificación)
+
+        # Bonus Letters Filter
         if bonus_chars:
-            # all() verifica que cada caracter requerido esté presente en la palabra
             if not all(char in word_lower for char in bonus_chars):
                 continue
-            
-        # 3. Filtro de Longitud
+
+        # Length Filter
         length_match = False
         
         if length == 0:
@@ -229,25 +227,13 @@ def search_for_containing_string(data: list, substring: str, length: int = 0, or
         elif or_more:
             if word_length >= length:
                 length_match = True
-        else: # Longitud exacta
+        else:
             if word_length == length:
                 length_match = True
         
+        # If all filters passed, add to results
         if length_match:
-            # Crear el objeto de resultado, copiando el estado base de 'is_bloque'
-            result_obj = {
-                "is_bloque": word_obj['is_bloque'], 
-                "length": word_length,
-                "value": word
-            }
-            
-            # 4. Simulación de 'is_bloque' (ejecutando lógica dinámica si hay bonus_letters)
-            # Mantenemos esta simulación para el feedback visual del frontend.
-            if bonus_chars and word_length > 5:
-                 if any(char in word_lower for char in bonus_chars):
-                     result_obj['is_bloque'] = True 
-
-            results.append(result_obj)
+            results.append(word_obj)
 
     return results
 

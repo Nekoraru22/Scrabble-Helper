@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+
+const RESULTS_PER_PAGE = 500;
 
 interface WordResult {
   is_bloque: boolean
@@ -21,6 +24,7 @@ export default function WordGenerator() {
   const [firstLoad, setFirstLoad] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [bonusLetters, setBonusLetters] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const generateWords = async () => {
     if (!inputWord.trim()) return;
@@ -28,6 +32,7 @@ export default function WordGenerator() {
     if (firstLoad) setFirstLoad(false);
     setIsLoading(true);
     setError(null);
+    setCurrentPage(1);
 
     try {
       const bonusLettersParam = bonusLetters.trim()
@@ -48,6 +53,26 @@ export default function WordGenerator() {
       setGeneratedWords([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const totalWords = generatedWords.length;
+  const totalPages = Math.ceil(totalWords / RESULTS_PER_PAGE);
+
+  const currentWordsToDisplay = useMemo(() => {
+    const indexOfLastResult = currentPage * RESULTS_PER_PAGE;
+    const indexOfFirstResult = indexOfLastResult - RESULTS_PER_PAGE;
+    return generatedWords.slice(indexOfFirstResult, indexOfLastResult);
+  }, [generatedWords, currentPage]);
+  
+  const startRange = Math.min(totalWords, ((currentPage - 1) * RESULTS_PER_PAGE) + 1);
+  const endRange = Math.min(totalWords, currentPage * RESULTS_PER_PAGE);
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    const resultsContainer = document.getElementById('results-list');
+    if (resultsContainer) {
+      resultsContainer.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -171,11 +196,13 @@ export default function WordGenerator() {
             </div>
           )}
 
-          {generatedWords.length > 0 && (
+          {totalWords > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-medium text-foreground">Found Words ({generatedWords.length})</h2>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {generatedWords.map((wordObj) => (
+              <h2 className="text-lg font-medium text-foreground">
+                Found Words ({startRange} - {endRange} of {totalWords})
+              </h2>
+              <div id="results-list" className="space-y-2 max-h-60 overflow-y-auto">
+                {currentWordsToDisplay.map((wordObj) => (
                   <div
                     key={wordObj.value}
                     className={`p-3 rounded-md text-sm text-foreground backdrop-blur-sm transition-shadow duration-200 ${
@@ -193,9 +220,34 @@ export default function WordGenerator() {
                   </div>
                 ))}
               </div>
+              
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center pt-2">
+                  <Button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600 transition-colors"
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    size="sm"
+                    className="bg-purple-500 hover:bg-purple-600 transition-colors"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+              
             </div>
           )}
-          {generatedWords.length === 0 && !firstLoad && !isLoading && !error && (
+          {totalWords === 0 && !firstLoad && !isLoading && !error && (
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-md backdrop-blur-sm">
               <p className="text-sm text-yellow-700 dark:text-yellow-300">No words found. Try a different input.</p>
             </div>
