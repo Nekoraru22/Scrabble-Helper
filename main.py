@@ -1,3 +1,5 @@
+import os
+import sys
 import json
 
 from flask_cors import CORS as cors
@@ -319,8 +321,26 @@ def search():
     return jsonify(resultados)
 
 
+def resource_path(relative_path):
+    """
+    Obtiene la ruta absoluta para los recursos (data_api.json, frontend, etc.).
+    Funciona tanto en el entorno de desarrollo como en el ejecutable de PyInstaller.
+    """
+    try:
+        # PyInstaller crea una carpeta temporal y guarda la ruta en _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Para el entorno de desarrollo normal
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
+
+
 if __name__ == "__main__":
     # UNCOMENT TO RUN THE SCRABBLE PROCESS (IT TAKES A WHILE)
     # main()
-    data_api = load_data_api("data_api.json")
+    
+    api_file_path = resource_path("data_api.json")
+    data_api = load_data_api(api_file_path)
+    print(f"Loaded {len(data_api)} words into the API.")
     app.run(host='0.0.0.0', port=5000)

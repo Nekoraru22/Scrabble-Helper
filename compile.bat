@@ -16,7 +16,7 @@ xcopy /E /I /Y scrabble-helper\public frontend\public
 if exist scrabble-helper.exe del /Q scrabble-helper.exe
 
 @REM Build the compiled project
-pyinstaller --onefile --add-data "frontend;frontend" --icon=frontend/public/icon.ico main.py
+pyinstaller --onefile --add-data "frontend;frontend" --add-data "data_api.json:." --icon=frontend/public/icon.ico main.py
 
 @REM Move dist file to root directory
 move /Y dist\main.exe scrabble-helper.exe
