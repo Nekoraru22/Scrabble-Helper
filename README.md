@@ -1,4 +1,10 @@
 # Scrabble Helper
+Una aplicación para ayudarte a encontrar las mejores palabras en Scrabble.
+
+## Instalación fácil y rápida
+Simplemente clica dos veces en el archivo `scrabble-helper.exe` para iniciar la aplicación. No se requiere instalación adicional.
+
+## Instalación manual
 
 ### Requisitos previos
 
@@ -39,7 +45,7 @@ Sigue estos pasos para configurar y ejecutar la aplicación en tu entorno local:
     Navega al directorio del frontend e instala las dependencias de Node.js.
 
     ```bash
-    cd front
+    cd scrabble-helper
     npm install
     ```
 
@@ -59,3 +65,24 @@ Sigue estos pasos para configurar y ejecutar la aplicación en tu entorno local:
     ```
 
 ¡Listo\! La aplicación ya debería estar funcionando. Si tienes algún problema, no dudes en abrir un *issue* en este repositorio.
+
+## Compilación del proyecto en un ejecutable
+### Instalar PyInstaller
+```bash
+pip install pyinstaller
+```
+
+### Crear un ejecutable simple
+```bash
+pyinstaller tu_script.py
+```
+
+### Crear un ejecutable en un solo archivo (recomendado)
+```bash
+pyinstaller --onefile tu_script.py
+```
+
+### Con icono personalizado y sin consola (para apps con GUI)
+```bash
+pyinstaller --onefile --windowed --icon=icono.ico tu_script.py
+```

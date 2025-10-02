@@ -20,30 +20,36 @@ export default function WordGenerator() {
   const [isLoading, setIsLoading] = useState(false)
   const [firstLoad, setFirstLoad] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bonusLetters, setBonusLetters] = useState("");
 
   const generateWords = async () => {
-    if (!inputWord.trim()) return
+    if (!inputWord.trim()) return;
 
-    if (firstLoad) setFirstLoad(false)
-    setIsLoading(true)
-    setError(null)
+    if (firstLoad) setFirstLoad(false);
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/search/${encodeURIComponent(inputWord.trim())}/${count}?or_more=${orMore}`)
+      const bonusLettersParam = bonusLetters.trim()
+        ? `&bonus_letters=${encodeURIComponent(bonusLetters.trim())}`
+        : "";
+      const response = await fetch(
+        `http://192.168.1.137:5000/search/${encodeURIComponent(inputWord.trim())}/${count}?or_more=${orMore}${bonusLettersParam}`
+      );
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`)
+        throw new Error(`API request failed: ${response.status}`);
       }
 
-      const words = await response.json()
-      setGeneratedWords(Array.isArray(words) ? words : [])
+      const words = await response.json();
+      setGeneratedWords(Array.isArray(words) ? words : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch words")
-      setGeneratedWords([])
+      setError(err instanceof Error ? err.message : "Failed to fetch words");
+      setGeneratedWords([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <TooltipProvider>
@@ -122,6 +128,25 @@ export default function WordGenerator() {
                   </label>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="bonusLetters" className="text-sm font-medium text-foreground">
+                Bonus Letters (comma-separated)
+              </label>
+              <Input
+                id="bonusLetters"
+                type="text"
+                placeholder="e.g., a,b,c"
+                value={bonusLetters}
+                onChange={(e) => setBonusLetters(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    generateWords();
+                  }
+                }}
+                className="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
+              />
             </div>
 
             <Button

@@ -1,8 +1,9 @@
-from flask import Flask, send_from_directory, jsonify, request
-from multiprocessing import Pool, cpu_count
-from collections import defaultdict
-
 import json
+
+from flask_cors import CORS as cors
+from collections import defaultdict
+from multiprocessing import Pool, cpu_count
+from flask import Flask, send_from_directory, jsonify, request
 
 
 class Scrabble:
@@ -184,26 +185,71 @@ def load_data_api(path_api: str) -> list:
         return []
 
 
-def search_for_containing_string(data_api: list, substring: str, length_word: int = 0, or_more: bool = False) -> list:
+def search_for_containing_string(data: list, substring: str, length: int = 0, or_more: bool = False, bonus_letters: str = "") -> list:
     """
-    Busca palabras que contengan una subcadena específica.
+    Busca palabras que contengan una subcadena específica y cumplan con el filtro de longitud, 
+    trabajando ahora con una lista de diccionarios.
 
     Args:
+        data: La lista de diccionarios de palabras ({'value', 'length', 'is_bloque'}).
         substring: La subcadena a buscar.
-        length_word: La longitud exacta de las palabras a buscar.
-                        Si es 0, no se filtra por longitud.
+        length: La longitud exacta o mínima de las palabras a buscar.
+        or_more: Si es True, busca palabras de longitud >= length. Si es False, busca longitud == length.
+        bonus_letters: Letras extra separadas por coma (ahora usadas para el filtrado de palabras).
 
-    Returns: Una lista de palabras que contienen la subcadena.
+    Returns: Una lista de diccionarios de resultados ({'is_bloque', 'length', 'value'}).
     """
     substring = substring.lower()
-    if length_word == 0:
-        resultados = [word for word in data_api if substring in word['value']]
-    else:
-        if or_more:
-            resultados = [word for word in data_api if substring in word['value'] and word['length'] >= length_word]
-        else:
-            resultados = [word for word in data_api if substring in word['value'] and word['length'] == length_word]
-    return resultados
+    results = []
+
+    # Preparar el conjunto de letras de bonificación para el filtrado
+    bonus_chars = set(c.strip().lower() for c in bonus_letters.split(',') if c.strip())
+    
+    for word_obj in data:
+        # Extraer los datos del diccionario
+        word = word_obj['value']
+        word_lower = word.lower()
+        word_length = word_obj['length']
+        
+        # 1. Filtro de Subcadena
+        if substring not in word_lower:
+            continue
+        
+        # 2. Filtro de Letras de Bonificación (NUEVO: la palabra debe contener TODAS las letras de bonificación)
+        if bonus_chars:
+            # all() verifica que cada caracter requerido esté presente en la palabra
+            if not all(char in word_lower for char in bonus_chars):
+                continue
+            
+        # 3. Filtro de Longitud
+        length_match = False
+        
+        if length == 0:
+            length_match = True
+        elif or_more:
+            if word_length >= length:
+                length_match = True
+        else: # Longitud exacta
+            if word_length == length:
+                length_match = True
+        
+        if length_match:
+            # Crear el objeto de resultado, copiando el estado base de 'is_bloque'
+            result_obj = {
+                "is_bloque": word_obj['is_bloque'], 
+                "length": word_length,
+                "value": word
+            }
+            
+            # 4. Simulación de 'is_bloque' (ejecutando lógica dinámica si hay bonus_letters)
+            # Mantenemos esta simulación para el feedback visual del frontend.
+            if bonus_chars and word_length > 5:
+                 if any(char in word_lower for char in bonus_chars):
+                     result_obj['is_bloque'] = True 
+
+            results.append(result_obj)
+
+    return results
 
 
 def main():
@@ -234,6 +280,7 @@ def main():
 
 ### FLASK APP ###
 app = Flask(__name__, static_folder='static')
+cors(app)
 
 # Serve the Next.js static files from the .next/static directory
 @app.route('/_next/<path:filename>')
@@ -256,7 +303,12 @@ def search(substring, length):
     if not length:
         length = 0
 
-    resultados = search_for_containing_string(data_api, substring, length, request.args.get('or_more') == 'true')
+    # Get query parameters
+    or_more = request.args.get('or_more') == 'true'
+    bonus_letters = request.args.get('bonus_letters', '')
+
+    resultados = search_for_containing_string(data_api, substring, length, or_more, bonus_letters)
+    print(f"Search for '{substring}' with length {length} (or_more={or_more}, bonus_letters='{bonus_letters}') returned {len(resultados)} results.")
     return jsonify(resultados)
 
 
@@ -264,4 +316,4 @@ if __name__ == "__main__":
     # UNCOMENT TO RUN THE SCRABBLE PROCESS (IT TAKES A WHILE)
     # main()
     data_api = load_data_api("data_api.json")
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
