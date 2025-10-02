@@ -283,17 +283,17 @@ cors(app)
 # Serve the Next.js static files from the .next/static directory
 @app.route('/_next/<path:filename>')
 def serve_next_static(filename):
-    return send_from_directory('scrabble-helper/.next/', filename)
+    return send_from_directory('frontend/.next/', filename)
 
 # Serve other public files (like images, etc.) from the public directory
 @app.route('/<path:filename>')
 def serve_public(filename):
-    return send_from_directory('scrabble-helper/public', filename)
+    return send_from_directory('frontend/public', filename)
 
 # Serve the main index.html page
 @app.route('/')
 def serve_index():
-    return send_from_directory('scrabble-helper/.next/server/app', 'index.html')
+    return send_from_directory('frontend/.next/server/app', 'index.html')
 
 # Endpoint to search for a word
 @app.route('/search', methods=['GET'])
@@ -323,4 +323,4 @@ if __name__ == "__main__":
     # UNCOMENT TO RUN THE SCRABBLE PROCESS (IT TAKES A WHILE)
     # main()
     data_api = load_data_api("data_api.json")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)

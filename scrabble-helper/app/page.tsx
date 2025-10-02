@@ -49,7 +49,7 @@ export default function WordGenerator() {
         : "";
 
       // Construct a new URL using the new state variables
-      const url = `http://192.168.1.137:5000/search?starts_with=${encodeURIComponent(startsWithParam)}&contained=${encodeURIComponent(containedParam)}&ends_with=${encodeURIComponent(endsWithParam)}&length=${length}&or_more=${orMore}${bonusLettersParam}`;
+      const url = `/search?starts_with=${encodeURIComponent(startsWithParam)}&contained=${encodeURIComponent(containedParam)}&ends_with=${encodeURIComponent(endsWithParam)}&length=${length}&or_more=${orMore}${bonusLettersParam}`;
 
       const response = await fetch(url);
 
@@ -121,7 +121,7 @@ export default function WordGenerator() {
                 <Input
                   id="starts-with"
                   type="text"
-                  placeholder="Prefix..."
+                  placeholder="Prefix"
                   value={startsWith}
                   onChange={(e) => setStartsWith(e.target.value)}
                   className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
@@ -137,7 +137,7 @@ export default function WordGenerator() {
                 <Input
                   id="ends-with"
                   type="text"
-                  placeholder="Suffix..."
+                  placeholder="Suffix"
                   value={endsWith}
                   onChange={(e) => setEndsWith(e.target.value)}
                   className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"

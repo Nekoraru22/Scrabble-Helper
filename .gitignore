@@ -1,1 +1,7 @@
 *env/
+main.spec
+build/
+dist/
+__pycache__/
+scrabble-helper.exe
+frontend/

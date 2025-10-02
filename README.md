@@ -68,21 +68,4 @@ Sigue estos pasos para configurar y ejecutar la aplicación en tu entorno local:
 
 ## Compilación del proyecto en un ejecutable
 ### Instalar PyInstaller
-```bash
-pip install pyinstaller
-```
-
-### Crear un ejecutable simple
-```bash
-pyinstaller tu_script.py
-```
-
-### Crear un ejecutable en un solo archivo (recomendado)
-```bash
-pyinstaller --onefile tu_script.py
-```
-
-### Con icono personalizado y sin consola (para apps con GUI)
-```bash
-pyinstaller --onefile --windowed --icon=icono.ico tu_script.py
-```
+Execute `./compile.bat` to create the executable file.
