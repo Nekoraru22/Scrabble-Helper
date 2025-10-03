@@ -20,6 +20,7 @@ pyinstaller --onefile --add-data "frontend;frontend" --add-data "data_api.json:.
 
 @REM Move dist file to root directory
 move /Y dist\main.exe scrabble-helper.exe
+timeout /T 1 /NOBREAK >nul
 rd /S /Q dist
 rd /S /Q build
 rd /S /Q frontend
