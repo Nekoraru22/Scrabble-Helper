@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -26,6 +26,23 @@ export default function WordGenerator() {
   const [error, setError] = useState<string | null>(null)
   const [bonusLetters, setBonusLetters] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Load bonus letters from localStorage on mount
+  useEffect(() => {
+    const savedBonusLetters = localStorage.getItem('scrabble-bonus-letters');
+    if (savedBonusLetters) {
+      setBonusLetters(savedBonusLetters);
+    }
+  }, []);
+
+  // Save bonus letters to localStorage whenever it changes
+  useEffect(() => {
+    if (bonusLetters.trim()) {
+      localStorage.setItem('scrabble-bonus-letters', bonusLetters);
+    } else {
+      localStorage.removeItem('scrabble-bonus-letters');
+    }
+  }, [bonusLetters]);
 
   const generateWords = async () => {
     const startsWithParam = startsWith.trim();
