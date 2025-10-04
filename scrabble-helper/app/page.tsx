@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import * as XLSX from "xlsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const RESULTS_PER_PAGE = 500;
@@ -43,6 +44,21 @@ export default function WordGenerator() {
       localStorage.removeItem('scrabble-bonus-letters');
     }
   }, [bonusLetters]);
+
+  const downloadExcel = () => {
+    if (generatedWords.length === 0) return;
+
+    const worksheetData = generatedWords.map((word) => ({
+      Word: word.value,
+      Length: word.length,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Words");
+
+    XLSX.writeFile(workbook, "scrabble_words.xlsx");
+  };
 
   const generateWords = async () => {
     const startsWithParam = startsWith.trim();
@@ -254,9 +270,18 @@ export default function WordGenerator() {
 
           {totalWords > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-medium text-foreground">
-                Found Words ({startRange} - {endRange} of {totalWords})
-              </h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-medium text-foreground">
+                  Found Words ({startRange} - {endRange} of {totalWords})
+                </h2>
+                <Button
+                  onClick={downloadExcel}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 transition-colors"
+                >
+                  Download Excel
+                </Button>
+              </div>
               <div id="results-list" className="space-y-2 max-h-60 overflow-y-auto">
                 {currentWordsToDisplay.map((wordObj) => (
                   <div
