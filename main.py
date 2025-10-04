@@ -223,9 +223,17 @@ def search_for_containing_string(
         word = word_obj['value']
         word_lower = word.lower()
         word_length = word_obj['length']
-        
+
         # Combined String Filters
         if not (word_lower.startswith(starts_with) and word_lower.endswith(ends_with) and contained in word_lower):
+            continue
+
+        # Ch, ll, rr avoidance
+        if contained.startswith('h') and 'c' + contained in word_lower or \
+            contained.startswith('l') and 'l' + contained in word_lower or \
+            contained.endswith('l') and contained + 'l' in word_lower or \
+            contained.startswith('r') and 'r' + contained in word_lower or \
+            contained.endswith('r') and contained + 'r' in word_lower:
             continue
 
         # Bonus Letters Filter

@@ -23,7 +23,6 @@ move /Y dist\main.exe scrabble-helper.exe
 timeout /T 1 /NOBREAK >nul
 rd /S /Q dist
 rd /S /Q build
-rd /S /Q frontend
 del /Q main.spec
 
 @echo Build complete: scrabble-helper.exe

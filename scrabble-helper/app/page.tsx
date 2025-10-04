@@ -141,6 +141,11 @@ export default function WordGenerator() {
                   placeholder="Prefix"
                   value={startsWith}
                   onChange={(e) => setStartsWith(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      generateWords()
+                    }
+                  }}
                   className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
                 />
                 <Input
@@ -149,6 +154,11 @@ export default function WordGenerator() {
                   placeholder="Word"
                   value={contained}
                   onChange={(e) => setContained(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      generateWords()
+                    }
+                  }}
                   className="flex-grow bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
                 />
                 <Input
@@ -157,6 +167,11 @@ export default function WordGenerator() {
                   placeholder="Suffix"
                   value={endsWith}
                   onChange={(e) => setEndsWith(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      generateWords()
+                    }
+                  }}
                   className="w-1/3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/30 dark:border-slate-600/30"
                 />
               </div>
